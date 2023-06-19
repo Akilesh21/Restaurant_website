@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,get_object_or_404
 from rest_framework.decorators import api_view
 from django.http import HttpResponse, JsonResponse
 from rest_framework import generics
@@ -8,8 +8,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError
 from django.forms.models import model_to_dict
 # serializers import
-from .serializers import Book_table_Serilaizer,MenuItemSerializer
+from rest_framework import status
+from .serializers import Book_table_Serilaizer,Menu_tableSerializer
 from rest_framework import generics
+from rest_framework.decorators import api_view,permission_classes
+from rest_framework.response import Response
+from django.core.paginator import Paginator,EmptyPage
 # Create your views here.
 
 def home(request):
@@ -36,29 +40,6 @@ def display_menu_items(request,pk=None):
     if pk is not None:
         menu_item = Menu_table.objects.get(pk=pk)    
     return render(request,'menu_item.html',{"menu_item":menu_item})  
-
-
-# api
-# @csrf_exempt
-# def book_t(request):
-#     if request.method == 'GET':
-#         names = Booking_table.objects.all().values()
-#         return JsonResponse({"name":list(names)})
-#     elif request.method == 'POST':
-#         name = request.POST.get('name')
-#         no_of_guests = request.POST.get('no_of_guests')
-#         date = request.POST.get('date')
-#         name = Booking_table(
-#             name = name,
-#             no_of_guests = no_of_guests,
-#             date = date
-#         )
-#         try:
-#             name.save()
-#         except IntegrityError:
-#             return JsonResponse({'error':'true','message':'required field missing'},status =400)
-#         return JsonResponse(model_to_dict(name),status=201)   
-
 # Serializer
 # Booking table api view 
 class Book_tView(generics.ListCreateAPIView):
@@ -69,9 +50,39 @@ class SingleView(generics.RetrieveUpdateAPIView):
     serializer_class = Book_table_Serilaizer  
 
 # Menu Item api view 
-class MenuItemsView(generics.ListCreateAPIView):
-    queryset = Menu_table.objects.all()
-    serializer_class = MenuItemSerializer
-class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Menu_table.objects.all()    
-    serializer_class = MenuItemSerializer
+@api_view(['GET','POST'])
+
+def menu_items(request):
+    if request.method == 'GET':
+        items = Menu_table.objects.select_related('category').all()
+        category_name = request.query_params.get('category')
+        to_price = request.query_params.get('to_price')
+        search = request.query_params.get('search')
+        ordering = request.query_params.get('ordering')
+        perpage = request.query_params.get('perpage',default =2)
+        page = request.query_params.get('page',default =1)
+        if category_name:
+            items = items.filter(category__title=category_name)
+        if to_price:
+            items = items.filter(price=to_price)
+        if ordering:
+            ordering_fields = ordering.split(",") 
+            items = items.order_by(*ordering_fields) 
+        paginator = Paginator(items,per_page=perpage)    
+        try:
+            items = paginator.page(number=page) 
+        except EmptyPage:
+            items = [] 
+        serialized_item = Menu_tableSerializer(items,many = True)
+        return Response(serialized_item.data) 
+    elif request.method == 'POST':
+        serialized_item = Menu_tableSerializer(data = request.data)
+        serialized_item.is_valid(raise_exception=True) 
+        serialized_item.save()
+        return Response(serialized_item.data,status=status.HTTP_201_CREATED)    
+@api_view([])
+# it will show the single item passed in server
+def single_item(request,id):
+    item = get_object_or_404(Menu_table,pk=id)
+    serialized_item = Menu_tableSerializer(item)
+    return Response(serialized_item.data)   
