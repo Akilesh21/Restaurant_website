@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Booking_table,Category,Menu_table,Rating,Cart
+from .models import Booking_table,Category,Menu_table,Rating,Cart,Order,OrderItem
 from decimal import Decimal
 from rest_framework.validators import UniqueTogetherValidator
 from django.contrib.auth.models import User
@@ -66,3 +66,21 @@ class CartSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'price': {'read_only': True}
         }
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['order','menuitem','quantity','price']
+
+class OrderSerializers(serializers.ModelSerializer):
+    orderitem = OrderItemSerializer(many=True,read_only=True,source='order')
+    class Meta:
+        model =Order
+        fields = ['id','user','delivery_crew',
+                  'status','date','orderitem']
+
+class UserSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id','username','email']
+                
