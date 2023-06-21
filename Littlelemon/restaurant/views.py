@@ -2,18 +2,20 @@ from django.shortcuts import render,get_object_or_404
 from rest_framework.decorators import api_view
 from django.http import HttpResponse, JsonResponse
 from rest_framework import generics
-from .models import Booking_table,Menu_table
+from .models import Booking_table,Menu_table,Rating,Cart
 from .forms import BookingForm
 from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError
 from django.forms.models import model_to_dict
 # serializers import
 from rest_framework import status
-from .serializers import Book_table_Serilaizer,Menu_tableSerializer
+from .serializers import Book_table_Serilaizer,Menu_tableSerializer,RatingSerializer,CartSerializer
 from rest_framework import generics
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
 from django.core.paginator import Paginator,EmptyPage
+from rest_framework.permissions import IsAuthenticated
+
 # Create your views here.
 
 def home(request):
@@ -86,3 +88,24 @@ def single_item(request,id):
     item = get_object_or_404(Menu_table,pk=id)
     serialized_item = Menu_tableSerializer(item)
     return Response(serialized_item.data)   
+
+class RatingView(generics.ListCreateAPIView):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+
+    def get_permissions(self):
+        if self.request.method =='GET':
+            return []
+        return [IsAuthenticated()]
+
+class CartView(generics.ListCreateAPIView):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Cart.objects.all().filter(user=self.request.user)
+
+    def delete(self, request, *args, **kwargs):
+        Cart.objects.all().filter(user=self.request.user).delete()
+        return Response("ok")

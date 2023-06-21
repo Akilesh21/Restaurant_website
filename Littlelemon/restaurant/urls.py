@@ -13,4 +13,6 @@ urlpatterns = [
     path('api/book_t/<int:pk>',views.SingleView.as_view()),
     path('api/menu-items',views.menu_items),
     path('api/menu-items/<int:pk>',views.single_item),
+    path('ratings',views.RatingView.as_view()),
+    path('cart/menu-items', views.CartView.as_view()),
 ]
