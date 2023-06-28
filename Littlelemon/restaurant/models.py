@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-# Create your models here.
 class Booking_table(models.Model):
     name = models.CharField(max_length=200)
     no_of_guests = models.IntegerField()
@@ -25,7 +24,7 @@ class Menu_table(models.Model):
 class Rating(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     menu_table_id = models.SmallIntegerField()
-    rating = models.SmallIntegerField()
+    rating = models.FloatField()
 
 class Cart(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
@@ -57,4 +56,12 @@ class OrderItem(models.Model):
 
     class Meta:
         unique_together = ('order','menuitem')
-        
+
+class Contact(models.Model):
+    name = models.CharField(max_length=255)
+    email = models.EmailField(max_length=255)
+    query =models.CharField(max_length=500)
+
+class Login(models.Model):
+    name = models.CharField(max_length=255)
+    password = models.CharField(max_length=255)

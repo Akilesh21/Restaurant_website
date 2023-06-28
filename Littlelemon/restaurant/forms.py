@@ -5,4 +5,4 @@ class BookingForm(ModelForm):
     class Meta:
         model = Booking_table
         fields = "__all__"
-        
+

@@ -1,3 +1,4 @@
+
 """
 Django settings for Littlelemon project.
 
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'restaurant',
     'rest_framework',
+    'rest_framework.authtoken',
     'rest_framework_xml'
 ]
 
@@ -150,3 +152,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 2,
 }
+
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'akhileshsoni4556@gmail.com'
+EMAIL_HOST_PASSWORD = '*****'
+EMAIL_USE_TLS = True  # Use TLS for secure connection
+DEFAULT_FROM_EMAIL = 'akhileshsoni4556@gmail.com'

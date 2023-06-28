@@ -8,6 +8,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import IntegrityError
 from django.forms.models import model_to_dict
 from datetime import datetime
+# registration imports
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import UserCreationForm
+
+# send mail imports
+from django.core.mail import send_mail
+from django.shortcuts import render,redirect
+from django.conf import settings
 # serializers import
 from rest_framework import status
 from .serializers import Book_table_Serilaizer,Menu_tableSerializer,RatingSerializer,CartSerializer,OrderItemSerializer,OrderSerializers,UserSerializers
@@ -38,11 +46,28 @@ def book(request):
     context = {'form':form}
     return render(request, 'book.html', context)
 
+def contact(request):
+    if request.method=='POST':
+        name=request.POST.get('name')
+        email = request.POST.get('email')
+        query = request.POST.get('message')
+        subject = f'New contact form submission from {name}'
+        send_mail(
+            subject,
+            query,
+            email,
+            [settings.DEFAULT_FROM_EMAIL],
+            fail_silently=False,
+        )
+        return render(request,'success.html')
+    return render(request,'contact.html')
+
 # Add your code here to create new views
 def menu(request):
     menu_data = Menu_table.objects.all()
     main_data = {'menu':menu_data}
     return render(request,'menu.html',{"main":main_data})
+
 def display_menu_items(request,pk=None):
     if pk is not None:
         menu_item = Menu_table.objects.get(pk=pk)    
@@ -224,3 +249,4 @@ class DeliveryCrewViewSet(viewsets.ViewSet):
         dc = Group.objects.get(name="Delivery Crew")
         dc.user_set.remove(user)
         return Response({"message": "user removed from the delivery crew group"}, 200)
+

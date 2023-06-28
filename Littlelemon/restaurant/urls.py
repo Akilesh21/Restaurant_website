@@ -9,6 +9,7 @@ urlpatterns = [
     # Add the remaining URL path configurations here
     path('menu/',views.menu,name="menu"),
     path('menu/<int:pk>/',views.display_menu_items,name="menu_item"),
+    path('contact',views.contact,name='contact'),
     path('api/book_t',views.Book_tView.as_view()),
     path('api/book_t/<int:pk>',views.SingleView.as_view()),
     path('api/menu-items',views.menu_items),
@@ -21,5 +22,5 @@ urlpatterns = [
         {'get': 'list', 'post': 'create', 'delete': 'destroy'})),
 
     path('groups/delivery-crew/users', views.DeliveryCrewViewSet.as_view(
-        {'get': 'list', 'post': 'create', 'delete': 'destroy'}))
+        {'get': 'list', 'post': 'create', 'delete': 'destroy'}))    
 ]
