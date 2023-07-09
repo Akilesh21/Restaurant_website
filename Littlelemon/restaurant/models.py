@@ -1,9 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.forms import DateInput
+
 class Booking_table(models.Model):
     name = models.CharField(max_length=200)
     no_of_guests = models.IntegerField()
     date = models.DateField()
+    reservation_slot = models.SmallIntegerField(default=10)
     class Meta:
         indexes = [
             models.Index(fields=['name'])

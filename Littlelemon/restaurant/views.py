@@ -11,7 +11,7 @@ from datetime import datetime
 # registration imports
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import UserCreationForm
-
+import json
 # send mail imports
 from django.core.mail import send_mail
 from django.shortcuts import render,redirect
@@ -36,15 +36,31 @@ def home(request):
 
 def about(request):
     return render(request, 'about.html')
-
+@csrf_exempt
 def book(request):
-    form = BookingForm()
+    exist = False  # Initialize 'exist' with a default value
+
     if request.method == 'POST':
-        form = BookingForm(request.POST)
-        if form.is_valid():
-            form.save()
-    context = {'form':form}
-    return render(request, 'book.html', context)
+        data = json.loads(request.body)
+        exist = Booking_table.objects.filter(date=data['date']).filter(
+            reservation_slot=data['reservation_slot']).exists()
+        
+        if not exist:
+            booking = Booking_table(
+                name=data['name'],
+                no_of_guests=data['no_of_guests'],
+                date=data['date'],
+                reservation_slot=data['reservation_slot']
+            )    
+            booking.save()
+        else:
+            return HttpResponse("{'error':1}", content_type='application/json')
+
+    date = request.GET.get('date', datetime.today().date())
+    bookings = Booking_table.objects.all().filter(date=date)
+    booking_json = serializers.Serializer('json', bookings)
+
+    return HttpResponse(booking_json, content_type='application/json')
 
 def contact(request):
     if request.method=='POST':
@@ -81,8 +97,7 @@ class SingleView(generics.RetrieveUpdateAPIView):
     queryset = Booking_table.objects.all()
     serializer_class = Book_table_Serilaizer  
 
-# Bookings detail
-
+# Bookings detail    
 # Menu Item api view 
 @api_view(['GET','POST'])
 
@@ -113,7 +128,21 @@ def menu_items(request):
         serialized_item = Menu_tableSerializer(data = request.data)
         serialized_item.is_valid(raise_exception=True) 
         serialized_item.save()
-        return Response(serialized_item.data,status=status.HTTP_201_CREATED)    
+        return Response(serialized_item.data,status=status.HTTP_201_CREATED)   
+    
+# def create_rating(request):
+#     if request.method == 'POST':
+#         form = RatingForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('ratings:list')
+#     else:
+#         form = RatingForm()
+#     return render(request, 'create_rating.html', {'form': form})
+
+# def list_ratings(request):
+#     ratings = Rating.objects.all()
+#     return render(request, 'list_ratings.html', {'ratings': ratings})     
 @api_view([])
 # it will show the single item passed in server
 def single_item(request,id):
@@ -121,14 +150,6 @@ def single_item(request,id):
     serialized_item = Menu_tableSerializer(item)
     return Response(serialized_item.data)   
 
-class RatingView(generics.ListCreateAPIView):
-    queryset = Rating.objects.all()
-    serializer_class = RatingSerializer
-
-    def get_permissions(self):
-        if self.request.method =='GET':
-            return []
-        return [IsAuthenticated()]
 
 class CartView(generics.ListCreateAPIView):
     queryset = Cart.objects.all()
@@ -249,4 +270,3 @@ class DeliveryCrewViewSet(viewsets.ViewSet):
         dc = Group.objects.get(name="Delivery Crew")
         dc.user_set.remove(user)
         return Response({"message": "user removed from the delivery crew group"}, 200)
-

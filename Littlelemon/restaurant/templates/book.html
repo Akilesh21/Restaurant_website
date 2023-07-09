@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block content %}
+
 <section>
   <article>
     <h1>Make a reservation</h1>
@@ -9,29 +10,133 @@
     <div class="row">
       <!--Begin col-->
       <div class="column">
-        <form action="" method="post">
+        <form method="POST" id="form">
           {% csrf_token %}
-          {{form.as_p}}
-          <input type="submit" id="button">
+          {{ form.as_p }}
+          <button type="submit" class="btn btn-primary custom-button" >Submit</button>
         </form>
+        <p id="success-message" class="success-message">Booking successful!</p>
       </div>
       <!--End col-->
 
       <!--Begin col-->
       <div class="column">
         <div class="videowrap">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15080.731037074034!2d72.87535869905423!3d19.099636713754148!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c8773cb2f051%3A0x40576ac944236b34!2sSaki%20Naka%2C%20Mumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1687592309966!5m2!1sen!2sin"
-            width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"></iframe>
+          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15080.731037074034!2d72.87535869905423!3d19.099636713754148!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c8773cb2f051%3A0x40576ac944236b34!2sSaki%20Naka%2C%20Mumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1688824600883!5m2!1sen!2sin" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
       </div>
       <!--End col-->
     </div>
     <!--End row-->
-
-
-
   </article>
 </section>
+
+<style>
+  /* Add custom styles */
+
+  .custom-button {
+    width: 100px; 
+    height: 30px;
+    background-color:#495E57; /* Add your desired color */
+    border-color: #495E57;
+  }
+
+  .success-message {
+    display: none;
+    color: #27ae60; /* Add your desired color */
+    margin-top: 10px;
+  }
+</style>
+
+<script>
+  const form = document.getElementById('form');
+  const successMessage = document.getElementById('success-message');
+
+  form.addEventListener('submit', submitHandler);
+
+  function submitHandler(e) {
+    e.preventDefault();
+
+    fetch(form.action, { method: 'POST', body: new FormData(form) })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message === 'success') {
+          showSuccessMessage();
+          form.reset();
+        }
+      });
+  }
+
+  function showSuccessMessage() {
+    successMessage.style.display = 'block';
+  }
+  const date = new Date()
+  document.getElementById('date').value = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate().toString().padStart(2, "0")}`
+
+  console.log(document.getElementById('date').value)
+  getBookings()
+
+
+  document.getElementById('date').addEventListener('change', function () {
+    getBookings()
+  })
+
+
+  function getBookings() {
+    let reserved_slots = []
+    const date = document.getElementById('date').value
+    document.getElementById('today').innerHTML = date
+    
+    fetch("{% url 'bookings' %}" + '?date=' + date)
+      .then(r => r.json())
+      .then(data => {
+        reserved_slots = []
+        bookings = ''
+        for (item of data) {
+          console.log(item.fields)
+          reserved_slots.push(item.fields.reservation_slot)
+          bookings += `<p>${item.fields.first_name} - ${formatTime(item.fields.reservation_slot)}</p>`
+        }
+
+        slot_options = '<option value="0" disabled>Select time</option>'
+        for (i = 10; i <= 20; i++) {
+          const label = formatTime(i)
+          if (reserved_slots.includes(i)) {
+            slot_options += `<option value=${i} disabled>${label}</option>`
+          } else {
+            slot_options += `<option value=${i}>${label}</option>`
+          }
+
+        }
+        
+        document.getElementById('reservation_slot').innerHTML = slot_options
+        if(bookings==''){
+          bookings = "No bookings"
+        }
+        document.getElementById('bookings').innerHTML = bookings
+      })
+  }
+
+  function formatTime(time) {
+    const ampm = time < 12 ? 'AM' : 'PM'
+    const t = time < 12 ? time : time > 12 ? time - 12 : time
+    const label = `${t} ${ampm}`
+    return label
+  }
+
+
+  document.getElementById('button').addEventListener('click', function (e) {
+    const formdata = {
+      first_name: document.getElementById('first_name').value,
+      reservation_date: document.getElementById('date').value,
+      reservation_slot: document.getElementById('reservation_slot').value,
+    }
+
+    fetch("{% url 'bookings' %}", { method: 'post', body: JSON.stringify(formdata) })
+      .then(r => r.text())
+      .then(data => {
+        getBookings()
+      })
+  })
+</script>
 {% endblock %}
